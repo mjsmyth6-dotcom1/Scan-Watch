@@ -62,7 +62,7 @@
 
     cover.button.addEventListener('click', function () {
       if (mode === 'ended') command('seekTo', [0, true]);
-      maskFor(4000);
+      maskFor(4500);
       command('playVideo');
       show(null);
     });
@@ -74,7 +74,7 @@
       clearTimeout(coverTimer);
       if (s === 1 || s === 3) {
         show(null);
-        if (!playing) maskFor(4000);
+        if (!playing) maskFor(4500);
         playing = true;
         if (!started) { started = true; shield.style.pointerEvents = 'auto'; }
       } else if (s === 0) { playing = false; masks(false); show('ended'); }
