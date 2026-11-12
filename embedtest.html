@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Player test</title>
+<style>
+  body { margin:0; padding:1rem; font-family:"Raleway","Calibri",sans-serif; background:#F7F4F0; color:#4A4744; }
+  h1 { font-size:1.5rem; color:#004EA8; margin:0 0 1rem; }
+  .t { margin:1.25rem 0 .4rem; font-weight:600; color:#004EA8; }
+  .box { position:relative; width:100%; max-width:30rem; aspect-ratio:16/9; background:#d9d4cc; border-radius:.75rem; overflow:hidden; }
+  .box iframe { position:absolute; inset:0; width:100%; height:100%; border:0; }
+</style>
+</head>
+<body>
+<h1>Player test</h1>
+<p>Each box should show a video picture with a play button. Note which boxes stay blank or black.</p>
+
+<div class="t">A. Current page setup (nocookie, locked down)</div>
+<div class="box"><iframe title="A" sandbox="allow-scripts allow-same-origin allow-presentation" allow="autoplay; encrypted-media; picture-in-picture" src="https://www.youtube-nocookie.com/embed/rqvahvwk50E?playsinline=1&rel=0&modestbranding=1&fs=0"></iframe></div>
+
+<div class="t">B. nocookie, no lock down</div>
+<div class="box"><iframe title="B" allow="autoplay; encrypted-media; picture-in-picture" src="https://www.youtube-nocookie.com/embed/rqvahvwk50E?playsinline=1&rel=0"></iframe></div>
+
+<div class="t">C. youtube.com, locked down</div>
+<div class="box"><iframe title="C" sandbox="allow-scripts allow-same-origin allow-presentation" allow="autoplay; encrypted-media; picture-in-picture" src="https://www.youtube.com/embed/rqvahvwk50E?playsinline=1&rel=0&fs=0"></iframe></div>
+
+<div class="t">D. youtube.com, no lock down</div>
+<div class="box"><iframe title="D" allow="autoplay; encrypted-media; picture-in-picture" src="https://www.youtube.com/embed/rqvahvwk50E?playsinline=1&rel=0"></iframe></div>
+</body>
+</html>

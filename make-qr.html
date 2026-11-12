@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Video QR cards</title>
+<style>
+:root {
+  --blue:#004EA8; --ink:#4A4744; --canvas:#F7F4F0; --surface:#FFFFFF; --outline:#DED8D0; --muted:#5F6B75;
+  --primary-container:#CEDDF3; --on-primary-container:#00306A; --on-accent:#7A4400;
+  --font:"Raleway","Calibri",sans-serif;
+}
+* { box-sizing:border-box; }
+body { margin:0; background:var(--canvas); color:var(--ink); font-family:var(--font); font-size:1.0625rem; line-height:1.55; }
+.wrap { max-width:72rem; margin:0 auto; padding:2.5rem 1.5rem 4rem; }
+h1 { margin:0 0 .5rem; font-size:clamp(2rem,4vw,3rem); font-weight:800; line-height:1.1; color:var(--blue); }
+h2 { font-size:1.5rem; font-weight:600; color:var(--blue); margin:0 0 .75rem; }
+p { max-width:65ch; margin:0 0 1rem; }
+.form { background:var(--surface); border:1px solid var(--outline); border-radius:1.5rem; padding:1.5rem; box-shadow:0 3px 16px rgb(0 0 0 / .10); display:grid; gap:1rem; margin:1.5rem 0 2rem; }
+label { font-size:.75rem; font-weight:600; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); display:block; margin-bottom:.25rem; }
+input[type=text] { width:100%; font:inherit; padding:.75rem 1rem; min-height:2.75rem; border:1px solid var(--outline); border-radius:.4rem; color:var(--ink); background:#fff; }
+input:focus-visible, button:focus-visible { outline:3px solid var(--blue); outline-offset:2px; }
+.row { display:flex; gap:.75rem; flex-wrap:wrap; align-items:center; }
+button { font:inherit; font-weight:600; min-height:2.75rem; padding:0 1.5rem; border-radius:999px; border:0; background:var(--blue); color:#fff; cursor:pointer; }
+button.quiet { background:var(--primary-container); color:var(--on-primary-container); }
+.err { color:var(--on-accent); font-weight:600; min-height:1.5rem; }
+.preview { aspect-ratio:16/9; max-width:28rem; border-radius:1rem; overflow:hidden; background:#000; }
+.preview iframe { width:100%; height:100%; border:0; }
+.cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(15rem,1fr)); gap:1.25rem; }
+.card { background:var(--surface); border:1px solid var(--outline); border-radius:1rem; padding:1.25rem; display:flex; flex-direction:column; align-items:center; gap:.75rem; break-inside:avoid; }
+.card .qr { width:100%; max-width:12rem; aspect-ratio:1; }
+.card .qr svg { width:100%; height:100%; display:block; }
+.card .t { font-weight:800; font-size:1.25rem; line-height:1.2; text-align:center; color:var(--blue); }
+.note { font-size:.9375rem; color:var(--muted); }
+.empty { color:var(--muted); }
+@media print {
+  body { background:#fff; }
+  .wrap { padding:0; max-width:none; }
+  .noprint { display:none !important; }
+  .cards { grid-template-columns:repeat(3,1fr); gap:0; }
+  .card { border:1px dashed #999; border-radius:0; box-shadow:none; padding:1rem .5rem; }
+  .card .qr { max-width:5.5cm; }
+  .card button { display:none; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="noprint">
+    <h1>Video QR cards</h1>
+    <p>Paste a YouTube link, give the card a name and add it to the sheet. Print the sheet and cut the cards out. Students scan them with the Watch icon on their iPad.</p>
+    <div class="form">
+      <div><label for="url">YouTube link</label><input id="url" type="text" placeholder="https://www.youtube.com/watch?v=..." autocomplete="off"></div>
+      <div><label for="title">Name on the card</label><input id="title" type="text" placeholder="Counting to 20" autocomplete="off"></div>
+      <div class="err" id="err" role="alert"></div>
+      <div class="row"><button id="check" class="quiet" type="button">Check it plays</button><button id="add" type="button">Add to sheet</button></div>
+      <div class="preview" id="preview" hidden></div>
+      <p class="note">Some videos are set so they cannot play outside YouTube. If the check shows an error, pick a different video or ask the owner to allow embedding. The cards only work in the Watch icon, so scanning one with the normal Camera app shows plain text and opens nothing.</p>
+    </div>
+    <h2>Your sheet</h2>
+    <p class="empty" id="empty">No cards yet. Add a video above.</p>
+  </div>
+  <div class="cards" id="cards"></div>
+  <div class="row noprint" style="margin-top:1.5rem"><button id="print" type="button">Print sheet</button><button id="clear" class="quiet" type="button">Clear sheet</button></div>
+</div>
+<script src="common.js"></script>
+<script src="qrmake.js"></script>
+<script>
+(function () {
+  var urlEl = document.getElementById('url'), titleEl = document.getElementById('title'), err = document.getElementById('err');
+  var preview = document.getElementById('preview'), cards = document.getElementById('cards'), empty = document.getElementById('empty');
+  var items = [];
+  try { items = JSON.parse(localStorage.getItem('qrcards') || '[]'); } catch (e) {}
+
+  function save() { try { localStorage.setItem('qrcards', JSON.stringify(items)); } catch (e) {} }
+
+  function render() {
+    cards.innerHTML = '';
+    empty.hidden = items.length > 0;
+    items.forEach(function (it, i) {
+      var c = document.createElement('div'); c.className = 'card';
+      var q = document.createElement('div'); q.className = 'qr';
+      try { q.innerHTML = qrSvg('video:' + it.id, 'Q'); } catch (e) { q.textContent = 'Could not make this code'; }
+      var t = document.createElement('div'); t.className = 't'; t.textContent = it.title;
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'quiet'; b.textContent = 'Remove';
+      b.onclick = function () { items.splice(i, 1); save(); render(); };
+      c.appendChild(q); c.appendChild(t); c.appendChild(b); cards.appendChild(c);
+    });
+  }
+
+  function current() {
+    err.textContent = '';
+    var id = parseVideoId(urlEl.value);
+    if (!id) { err.textContent = 'That does not look like a YouTube link. Copy it from the address bar or the Share button.'; return null; }
+    return id;
+  }
+
+  document.getElementById('check').onclick = function () {
+    var id = current(); if (!id) return;
+    preview.hidden = false;
+    preview.innerHTML = '';
+    var f = document.createElement('iframe');
+    f.title = 'Preview'; f.src = embedUrl(id);
+    f.allow = 'encrypted-media; picture-in-picture';
+    f.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-presentation');
+    preview.appendChild(f);
+  };
+  document.getElementById('add').onclick = function () {
+    var id = current(); if (!id) return;
+    items.push({ id: id, title: titleEl.value.trim() || 'Video' });
+    save(); render(); urlEl.value = ''; titleEl.value = ''; preview.hidden = true; preview.innerHTML = '';
+  };
+  document.getElementById('print').onclick = function () { window.print(); };
+  document.getElementById('clear').onclick = function () { items = []; save(); render(); };
+  render();
+})();
+</script>
+</body>
+</html>
