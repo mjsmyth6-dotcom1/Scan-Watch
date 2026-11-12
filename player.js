@@ -35,17 +35,14 @@
        so the first tap can reach YouTube's own play button (iPadOS needs that tap). */
     var shield = document.createElement('div');
     shield.style.cssText = 'position:absolute;inset:0;z-index:1;pointer-events:none;';
-    /* YouTube flashes its title bar and "More videos" for a few seconds after every play or resume.
-       Black panels hide those two areas for that time. */
-    var maskTop = document.createElement('div');
-    maskTop.style.cssText = 'position:absolute;left:0;top:0;width:62%;height:15%;border-radius:1.25rem;z-index:1;background:#000;pointer-events:none;display:none;';
+    /* YouTube flashes "More videos" in the bottom right for a few seconds after every play or resume.
+       A black panel hides that corner for that time. */
     var maskBottom = document.createElement('div');
     maskBottom.style.cssText = 'position:absolute;right:0;bottom:0;width:40%;height:16%;border-radius:1.25rem;z-index:1;background:#000;pointer-events:none;display:none;';
     var maskTimer = null;
-    function masks(on) { maskTop.style.display = maskBottom.style.display = on ? 'block' : 'none'; }
+    function masks(on) { maskBottom.style.display = on ? 'block' : 'none'; }
     function maskFor(ms) { clearTimeout(maskTimer); masks(true); maskTimer = setTimeout(function () { masks(false); }, ms); }
     stage.appendChild(f);
-    stage.appendChild(maskTop);
     stage.appendChild(maskBottom);
     stage.appendChild(shield);
     stage.appendChild(cover.el);
@@ -77,7 +74,7 @@
       clearTimeout(coverTimer);
       if (s === 1 || s === 3) {
         show(null);
-        if (!playing && started) maskFor(5000);
+        if (!playing) maskFor(started ? 5000 : 3000);
         playing = true;
         if (!started) { started = true; shield.style.pointerEvents = 'auto'; }
       } else if (s === 0) { playing = false; masks(false); show('ended'); }
