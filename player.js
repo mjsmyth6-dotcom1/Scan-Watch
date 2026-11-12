@@ -39,14 +39,25 @@
     pauseBtn.type = 'button';
     pauseBtn.setAttribute('aria-label', 'Pause');
     pauseBtn.style.cssText = 'position:absolute;left:1rem;bottom:1rem;z-index:1;width:4.5rem;height:4.5rem;border:0;border-radius:50%;' +
-      'background:rgba(0,78,168,.85);display:none;align-items:center;justify-content:center;cursor:pointer;';
+      'background:#004EA8;display:none;align-items:center;justify-content:center;cursor:pointer;';
     pauseBtn.innerHTML = '<svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><rect x="6" y="4" width="6" height="22" rx="2" fill="#fff"/><rect x="18" y="4" width="6" height="22" rx="2" fill="#fff"/></svg>';
+    /* YouTube flashes its title bar and "More videos" for a few seconds after every play or resume.
+       Black panels hide those two areas for that time. */
+    var maskTop = document.createElement('div');
+    maskTop.style.cssText = 'position:absolute;left:0;right:0;top:0;height:18%;z-index:1;background:#000;pointer-events:none;display:none;';
+    var maskBottom = document.createElement('div');
+    maskBottom.style.cssText = 'position:absolute;right:0;bottom:0;width:48%;height:20%;z-index:1;background:#000;pointer-events:none;display:none;';
+    var maskTimer = null;
+    function masks(on) { maskTop.style.display = maskBottom.style.display = on ? 'block' : 'none'; }
+    function maskFor(ms) { clearTimeout(maskTimer); masks(true); maskTimer = setTimeout(function () { masks(false); }, ms); }
     stage.appendChild(f);
+    stage.appendChild(maskTop);
+    stage.appendChild(maskBottom);
     stage.appendChild(shield);
     stage.appendChild(pauseBtn);
     stage.appendChild(cover.el);
 
-    var win = null, coverTimer = null, retry = null, heard = false, mode = null, started = false;
+    var win = null, coverTimer = null, retry = null, heard = false, mode = null, started = false, playing = false;
 
     function send(msg) { if (win) { try { win.postMessage(JSON.stringify(msg), YT); } catch (e) {} } }
     function command(func, args) { send({ event: 'command', func: func, args: args || [] }); }
@@ -73,10 +84,12 @@
       clearTimeout(coverTimer);
       if (s === 1 || s === 3) {
         show(null);
+        if (!playing && started) maskFor(7000);
+        playing = true;
         if (!started) { started = true; shield.style.pointerEvents = 'auto'; }
         if (started) pauseBtn.style.display = 'flex';
-      } else if (s === 0) { pauseBtn.style.display = 'none'; show('ended'); }
-      else if (s === 2) { pauseBtn.style.display = 'none'; coverTimer = setTimeout(function () { show('paused'); }, 100); }
+      } else if (s === 0) { playing = false; masks(false); pauseBtn.style.display = 'none'; show('ended'); }
+      else if (s === 2) { playing = false; masks(false); pauseBtn.style.display = 'none'; coverTimer = setTimeout(function () { show('paused'); }, 100); }
     }
 
     function onMessage(e) {
@@ -103,7 +116,7 @@
 
     return {
       destroy: function () {
-        clearTimeout(coverTimer); clearInterval(retry);
+        clearTimeout(coverTimer); clearTimeout(maskTimer); clearInterval(retry);
         window.removeEventListener('message', onMessage);
         stage.innerHTML = '';
       },
