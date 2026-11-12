@@ -54,6 +54,7 @@ button:focus-visible { outline:3px solid var(--blue); outline-offset:2px; }
 <canvas id="work" hidden></canvas>
 <script src="common.js"></script>
 <script src="qrscan.js"></script>
+<script src="player.js"></script>
 <script>
 (function () {
   var cam = document.getElementById('cam'), work = document.getElementById('work'), ctx = work.getContext('2d', { willReadFrequently:true });
@@ -68,18 +69,13 @@ button:focus-visible { outline:3px solid var(--blue); outline-offset:2px; }
     if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; }
   }
 
+  var player = null;
+
   function play(id) {
     stop();
     scanView.hidden = true; scanView.style.display = 'none';
     playView.hidden = false; playView.style.display = 'contents';
-    playStage.innerHTML = '';
-    var f = document.createElement('iframe');
-    f.src = embedUrl(id);
-    f.title = 'Video';
-    f.allow = 'autoplay; encrypted-media; picture-in-picture';
-    /* No popups and no top navigation, so nothing in the player can send a student to YouTube or Safari. */
-    f.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-presentation');
-    playStage.appendChild(f);
+    player = WatchPlayer.mount(playStage, id);
   }
 
   function tick() {
@@ -113,7 +109,7 @@ button:focus-visible { outline:3px solid var(--blue); outline-offset:2px; }
   }
 
   document.getElementById('again').addEventListener('click', function () {
-    playStage.innerHTML = '';
+    if (player) { player.destroy(); player = null; }
     playView.hidden = true; playView.style.display = 'none';
     scanView.hidden = false; scanView.style.display = 'contents';
     start();

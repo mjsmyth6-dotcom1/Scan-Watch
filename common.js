@@ -23,6 +23,8 @@ function parseVideoId(text) {
 }
 
 function embedUrl(id) {
-  return 'https://www.youtube.com/embed/' + id +
-    '?playsinline=1&rel=0&modestbranding=1&fs=0&iv_load_policy=3&disablekb=0';
+  var u = 'https://www.youtube.com/embed/' + id +
+    '?playsinline=1&rel=0&modestbranding=1&fs=0&iv_load_policy=3&disablekb=1&controls=0&enablejsapi=1';
+  if (typeof location !== 'undefined' && /^https?:/.test(location.origin)) u += '&origin=' + encodeURIComponent(location.origin);
+  return u;
 }
