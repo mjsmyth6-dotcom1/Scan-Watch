@@ -15,6 +15,8 @@ button.on { background:#004EA8; color:#fff; }
 #note { font-size:1rem; margin:0; }
 .stage { position:relative; flex:1; min-height:0; background:#000; border-radius:1.5rem; overflow:hidden; box-shadow:0 6px 24px rgb(0 0 0 / .12); }
 .stage iframe { position:absolute; left:0; top:0; width:100%; height:100%; border:0; background:#000; }
+.fit { position:absolute; overflow:hidden; }
+.block { position:absolute; z-index:1; }
 </style>
 </head>
 <body>
@@ -23,8 +25,10 @@ button.on { background:#004EA8; color:#fff; }
   <button data-v="B">B</button>
   <button data-v="C">C</button>
   <button data-v="D">D</button>
+  <button data-v="E">E</button>
+  <button data-v="F">F</button>
 </div>
-<p id="note">Tap A, B, C or D to load a version of the slide.</p>
+<p id="note">Tap a letter to load a version of the slide.</p>
 <div class="stage" id="stage"></div>
 <script>
 (function () {
@@ -36,10 +40,20 @@ button.on { background:#004EA8; color:#fff; }
     A: { note: 'A: the slide as Google gives it.', url: BASE },
     B: { note: 'B: asks Google to hide the Slides bar under the slide.', url: BASE + '&rm=minimal' },
     C: { note: 'C: same as B, and locked so nothing can open a new page or leave this one.', url: BASE + '&rm=minimal', sandbox: LOCKED },
-    D: { note: 'D: locked, with the bottom strip of the slide pushed out of view.', url: BASE, sandbox: LOCKED, crop: 40 }
+    D: { note: 'D: locked, with the bottom strip of the slide pushed out of view.', url: BASE, sandbox: LOCKED, crop: 40 },
+    E: { note: 'E: locked, with an invisible layer over the bottom buttons so they cannot be tapped.', url: BASE + '&rm=minimal', sandbox: LOCKED, blocks: [{ l: 2.98, t: 87, w: 95, h: 11.6 }] },
+    F: { note: 'F: same as E, and a black cover hides More videos and the YouTube logo.', url: BASE + '&rm=minimal', sandbox: LOCKED, blocks: [{ l: 2.98, t: 87, w: 95, h: 11.6 }, { l: 61.5, t: 87, w: 36.6, h: 11.6, black: true }] }
   };
   var stage = document.getElementById('stage'), note = document.getElementById('note');
   var buttons = document.querySelectorAll('button[data-v]');
+  var fitBox = null;
+  function fit() {
+    if (!fitBox) return;
+    var W = stage.clientWidth, H = stage.clientHeight, w = Math.min(W, H * 16 / 9), h = w * 9 / 16;
+    fitBox.style.width = w + 'px'; fitBox.style.height = h + 'px';
+    fitBox.style.left = (W - w) / 2 + 'px'; fitBox.style.top = (H - h) / 2 + 'px';
+  }
+  window.addEventListener('resize', fit);
   function load(key) {
     var v = variants[key];
     stage.innerHTML = '';
@@ -49,7 +63,23 @@ button.on { background:#004EA8; color:#fff; }
     if (v.sandbox) f.setAttribute('sandbox', v.sandbox);
     if (v.crop) f.style.height = 'calc(100% + ' + v.crop + 'px)';
     f.src = v.url;
-    stage.appendChild(f);
+    if (v.blocks) {
+      /* Keep the slide at 16:9 so the covers line up with the video. */
+      var box = document.createElement('div');
+      box.className = 'fit';
+      box.appendChild(f);
+      for (var b = 0; b < v.blocks.length; b++) {
+        var k = v.blocks[b], d = document.createElement('div');
+        d.className = 'block';
+        d.style.cssText = 'left:' + k.l + '%;top:' + k.t + '%;width:' + k.w + '%;height:' + k.h + '%;' + (k.black ? 'background:#000;border-radius:1rem 0 0 0;' : '');
+        box.appendChild(d);
+      }
+      stage.appendChild(box);
+      fitBox = box; fit();
+    } else {
+      fitBox = null;
+      stage.appendChild(f);
+    }
     note.textContent = v.note;
     for (var i = 0; i < buttons.length; i++) buttons[i].className = buttons[i].getAttribute('data-v') === key ? 'on' : '';
   }
