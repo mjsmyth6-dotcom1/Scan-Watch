@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Slide test</title>
+<style>
+* { box-sizing:border-box; }
+html, body { height:100%; margin:0; }
+body { display:flex; flex-direction:column; gap:.75rem; padding:1rem; background:#F7F4F0; color:#4A4744; font-family:Raleway,Calibri,sans-serif; }
+.bar { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; }
+button { font-family:inherit; font-weight:800; font-size:1.1rem; min-height:3rem; padding:0 1.25rem; border:2px solid #004EA8; border-radius:999px; background:#fff; color:#004EA8; cursor:pointer; }
+button.on { background:#004EA8; color:#fff; }
+#note { font-size:1rem; margin:0; }
+.stage { position:relative; flex:1; min-height:0; background:#000; border-radius:1.5rem; overflow:hidden; box-shadow:0 6px 24px rgb(0 0 0 / .12); }
+.stage iframe { position:absolute; left:0; top:0; width:100%; height:100%; border:0; background:#000; }
+</style>
+</head>
+<body>
+<div class="bar">
+  <button data-v="A">A</button>
+  <button data-v="B">B</button>
+  <button data-v="C">C</button>
+  <button data-v="D">D</button>
+</div>
+<p id="note">Tap A, B, C or D to load a version of the slide.</p>
+<div class="stage" id="stage"></div>
+<script>
+(function () {
+  'use strict';
+  /* Matt's published test deck. Each button shows it inside this page in a different way. */
+  var BASE = 'https://docs.google.com/presentation/d/e/2PACX-1vTh7_dG6WIAPWgNmeiZpdd4X2iUiOfJdxU9diiDokOk-g20jeepHb0r84d5U0U4E-ohXdcVN17aNkch/embed?start=false&loop=false&delayms=3000&slide=id.p';
+  var LOCKED = 'allow-scripts allow-same-origin allow-presentation';
+  var variants = {
+    A: { note: 'A: the slide as Google gives it.', url: BASE },
+    B: { note: 'B: asks Google to hide the Slides bar under the slide.', url: BASE + '&rm=minimal' },
+    C: { note: 'C: same as B, and locked so nothing can open a new page or leave this one.', url: BASE + '&rm=minimal', sandbox: LOCKED },
+    D: { note: 'D: locked, with the bottom strip of the slide pushed out of view.', url: BASE, sandbox: LOCKED, crop: 40 }
+  };
+  var stage = document.getElementById('stage'), note = document.getElementById('note');
+  var buttons = document.querySelectorAll('button[data-v]');
+  function load(key) {
+    var v = variants[key];
+    stage.innerHTML = '';
+    var f = document.createElement('iframe');
+    f.title = 'Video slide';
+    f.allow = 'autoplay; encrypted-media';
+    if (v.sandbox) f.setAttribute('sandbox', v.sandbox);
+    if (v.crop) f.style.height = 'calc(100% + ' + v.crop + 'px)';
+    f.src = v.url;
+    stage.appendChild(f);
+    note.textContent = v.note;
+    for (var i = 0; i < buttons.length; i++) buttons[i].className = buttons[i].getAttribute('data-v') === key ? 'on' : '';
+  }
+  for (var i = 0; i < buttons.length; i++) {
+    buttons[i].addEventListener('click', function () { load(this.getAttribute('data-v')); });
+  }
+})();
+</script>
+</body>
+</html>
